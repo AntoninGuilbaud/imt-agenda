@@ -80,7 +80,14 @@ def parse_datetime(raw):
     try:
         return datetime.fromisoformat(raw.replace("Z", "+00:00")).replace(tzinfo=None)
     except ValueError:
-        for pattern in ("%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M"):
+        for pattern in (
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+            "%d-%m-%Y %H:%M:%S",
+            "%d-%m-%Y %H:%M",
+        ):
             try:
                 return datetime.strptime(raw, pattern)
             except ValueError:
@@ -109,6 +116,7 @@ def fetch_ics():
     end = (start + timedelta(days=370)).replace(day=1)
     query = urllib.parse.urlencode({"start": start.strftime("%Y%m%d"), "end": end.strftime("%Y%m%d")})
     events = event_list(api_request(f"/programme?{query}", token=token))
+    app.logger.info("REX programme returned %d event records", len(events))
     now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = [
         "BEGIN:VCALENDAR",
@@ -117,6 +125,7 @@ def fetch_ics():
         "CALSCALE:GREGORIAN",
         "X-WR-CALNAME:Programme REX",
     ]
+    exported = 0
     for index, event in enumerate(events):
         start_dt = event_datetime(
             event,
@@ -154,7 +163,9 @@ def fetch_ics():
                 "END:VEVENT",
             ]
         )
+        exported += 1
     lines.append("END:VCALENDAR")
+    app.logger.info("Exported %d calendar events", exported)
     return "\r\n".join(lines) + "\r\n"
 
 
