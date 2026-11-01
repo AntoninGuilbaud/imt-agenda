@@ -88,6 +88,17 @@ def parse_datetime(raw):
     return None
 
 
+def event_datetime(event, date_names, time_names):
+    direct = parse_datetime(value(event, *date_names))
+    if direct:
+        return direct
+    event_date = value(event, "date", "dateCours", "jour")
+    event_time = value(event, *time_names)
+    if not event_date or not event_time:
+        return None
+    return parse_datetime(f"{event_date} {event_time}")
+
+
 def escape_ics(raw):
     return str(raw).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
 
@@ -107,16 +118,29 @@ def fetch_ics():
         "X-WR-CALNAME:Programme REX",
     ]
     for index, event in enumerate(events):
-        start_value = value(event, "start", "dateDebut", "debut", "startDate", "date_start")
-        end_value = value(event, "end", "dateFin", "fin", "endDate", "date_end")
-        start_dt = parse_datetime(start_value)
+        start_dt = event_datetime(
+            event,
+            ("start", "dateDebut", "debut", "startDate", "date_start"),
+            ("hd", "heureDebut", "startTime"),
+        )
         if not start_dt:
             continue
-        end_dt = parse_datetime(end_value) or (start_dt + timedelta(hours=1))
+        end_dt = event_datetime(
+            event,
+            ("end", "dateFin", "fin", "endDate", "date_end"),
+            ("hf", "heureFin", "endTime"),
+        ) or (start_dt + timedelta(hours=1))
         uid = value(event, "id", "uuid") or f"{start_dt.isoformat()}-{index}"
         title = value(event, "title", "cours", "matiere", "name", "label") or "Cours"
         location = value(event, "location", "salle", "room", "lieu")
-        description = value(event, "description", "enseignant", "professeur", "teacher")
+        description = value(event, "description", "enseignant", "professeur", "teacher", "prof")
+        extra = " - ".join(
+            str(item)
+            for item in (event.get("promo"), event.get("groupe"), event.get("remarque"))
+            if item not in (None, "")
+        )
+        if extra:
+            description = f"{description} - {extra}" if description else extra
         lines.extend(
             [
                 "BEGIN:VEVENT",
