@@ -107,7 +107,7 @@ def fetch_ics():
     token = login()
     start = date.today().replace(day=1)
     end = (start + timedelta(days=370)).replace(day=1)
-    query = urllib.parse.urlencode({"start": start.isoformat(), "end": end.isoformat()})
+    query = urllib.parse.urlencode({"start": start.strftime("%Y%m%d"), "end": end.strftime("%Y%m%d")})
     events = event_list(api_request(f"/programme?{query}", token=token))
     now = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     lines = [
