@@ -2,6 +2,7 @@ import json
 import os
 import secrets
 import threading
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -31,7 +32,11 @@ def api_request(path, method="GET", body=None, token=None):
         method=method,
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as response:
+        context = ssl.create_default_context()
+        if os.getenv("REX_TLS_VERIFY", "true").lower() in ("0", "false", "no"):
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, timeout=30, context=context) as response:
             return json.loads(response.read())
     except urllib.error.HTTPError as error:
         detail = error.read().decode("utf-8", "replace")

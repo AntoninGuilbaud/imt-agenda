@@ -24,6 +24,8 @@ rafraîchissement ; une mise à jour exactement toutes les heures ne peut pas
    - `REX_MOT_DE_PASSE`
    - `AGENDA_TOKEN` (une valeur longue et aléatoire)
    - `CACHE_MINUTES=60`
+   - `REX_TLS_VERIFY=false` (nécessaire tant que le certificat intermédiaire
+     du serveur REX n'est pas correctement publié)
 5. Dans Google Agenda : **Autres agendas → À partir de l'URL**, collez
    l'URL complète avec `?token=...`.
 
